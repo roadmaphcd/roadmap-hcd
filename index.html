@@ -8,7 +8,7 @@
         .card { max-width: 1000px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px #0002; }
         .top-controls { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
         #form-novo { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; border: 1px solid #ddd; }
-        input { margin: 5px; padding: 8px; width: 160px; }
+        input, select { margin: 5px; padding: 8px; width: 160px; box-sizing: border-box; }
         button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
@@ -30,9 +30,17 @@
     </div>
     
     <div id="form-novo">
-        <input id="resp" placeholder="Responsável"> <input id="proj" placeholder="Projeto">
-        <input id="status" placeholder="Status"> <input id="desc" placeholder="Descrição">
-        <input id="sol" placeholder="Solicitante"> <button style="background: #27ae60;" onclick="salvar()">SALVAR</button>
+        <!-- Campo Responsável agora é um SELECT fixo -->
+        <select id="resp">
+            <option value="Normando">Normando</option>
+            <option value="Aline">Aline</option>
+            <option value="Novelli">Novelli</option>
+        </select>
+        <input id="proj" placeholder="Projeto">
+        <input id="status" placeholder="Status">
+        <input id="desc" placeholder="Descrição">
+        <input id="sol" placeholder="Solicitante"> 
+        <button style="background: #27ae60;" onclick="salvar()">SALVAR</button>
     </div>
 
     <table id="tb">
@@ -42,7 +50,7 @@
 </div>
 
 <script>
-    const URL = "SUA_URL_AQUI";
+    const URL = "SUA_URL_AQUI"; // Cole aqui a sua URL que termina em /exec
 
     function buscar() {
         let filtro = document.getElementById('filtro').value;
