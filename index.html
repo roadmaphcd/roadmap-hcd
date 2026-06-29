@@ -43,20 +43,21 @@
         <button style="background: #008fa1;" onclick="abrirFormNovo()">+ NOVO PROJETO</button>
     </div>
     
-    <!-- DASHBOARD EVOLUÍDO -->
+    <!-- PAINEL DE MÉTRICAS DINÂMICO -->
     <div class="dashboard">
         <!-- Card Fixo de Demandas por Pessoa -->
         <div class="db-card" style="border-left-color: #7f8c8d; min-width: 220px;">
             <h3>Demandas Assumidas</h3>
-            <span id="count-normando">Normando: 0</span>
-            <span id="count-aline">Aline: 0</span>
-            <span id="count-novelli">Novelli: 0</span>
+            <span id="count-normando">Normando: 0 demandas</span>
+            <span id="count-aline">Aline: 0 demandas</span>
+            <span id="count-novelli">Novelli: 0 demandas</span>
         </div>
 
-        <!-- Área onde os Status digitados (Andamento, Concluído, Descontinuado, etc) vão aparecer sozinhos -->
+        <!-- Área onde os Status (Em andamento, Concluído, Descontinuado, etc.) aparecem sozinhos -->
         <div id="status-container"></div>
     </div>
     
+    <!-- Formulário de cadastro/edição -->
     <div id="form-novo" data-row="">
         <select id="resp">
             <option value="Normando">Normando</option>
@@ -72,7 +73,17 @@
     </div>
 
     <table id="tb">
-        <thead><tr><th>Resp</th><th>Projeto</th><th>Status</th><th>Desc</th><th>Sol</th><th>Data</th><th>Ações</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Responsável</th>
+                <th>Projeto</th>
+                <th>Status</th>
+                <th>Descrição</th>
+                <th>Solicitante</th>
+                <th>Data</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
         <tbody></tbody>
     </table>
 </div>
@@ -88,26 +99,25 @@
             
             // Dicionários para contagem dinâmica
             let deves = { "Normando": 0, "Aline": 0, "Novelli": 0 };
-            let contagemStatus = {}; // Vai guardar dinamicamente {'Concluído': 2, 'Descontinuado': 1, etc}
+            let contagemStatus = {}; 
 
             data.slice(1).forEach((row, index) => {
                 let linhaReal = index + 2; 
 
-                // 1. Captura o status digitado, remove espaços extras e padroniza a primeira letra maiúscula
+                // 1. Captura o status digitado, padronizando a primeira letra em maiúscula
                 let statusDigitado = row[2] ? row[2].trim() : "";
                 if (statusDigitado) {
                     statusDigitado = statusDigitado.charAt(0).toUpperCase() + statusDigitado.slice(1).toLowerCase();
-                    // Se o status já existir no dicionário, soma 1. Se não existir, começa em 1.
                     contagemStatus[statusDigitado] = (contagemStatus[statusDigitado] || 0) + 1;
                 }
                 
-                // 2. Conta as demandas fixas por pessoa
+                // 2. Conta as demandas por pessoa
                 let responsavel = row[0];
                 if (responsavel && deves.hasOwnProperty(responsavel)) {
                     deves[responsavel]++;
                 }
 
-                // 3. Monta a tabela na tela respeitando o filtro selecionado
+                // 3. Alimenta a tabela respeitando o filtro selecionado
                 if (filtro === "Todos" || row[0] === filtro) {
                     let rowData = JSON.stringify(row).replace(/"/g, '&quot;');
                     
@@ -126,26 +136,26 @@
                 }
             });
 
-            // Atualiza a caixinha das pessoas
+            // Atualiza as demandas individuais por pessoa
             document.getElementById('count-normando').innerText = `Normando: ${deves["Normando"]} demandas`;
             document.getElementById('count-aline').innerText = `Aline: ${deves["Aline"]} demandas`;
             document.getElementById('count-novelli').innerText = `Novelli: ${deves["Novelli"]} demandas`;
 
             // GERADOR DINÂMICO DE CARDS DE STATUS
             let containerStatus = document.getElementById('status-container');
-            containerStatus.innerHTML = ""; // Limpa os cards antigos
+            containerStatus.innerHTML = ""; 
 
-            // Mapeamento de cores baseado no nome do Status para deixar o visual bonito
+            // Define cores inteligentes baseadas no texto do Status
             const obterCorBorda = (nome) => {
                 let n = nome.toLowerCase();
                 if (n.includes('conclui') || n.includes('finaliza')) return '#2e7d32'; // Verde
                 if (n.includes('andamento') || n.includes('execu')) return '#008fa1'; // Azul
                 if (n.includes('descontin') || n.includes('cancela') || n.includes('parado')) return '#c0392b'; // Vermelho
                 if (n.includes('aguarda') || n.includes('espera')) return '#f57c00'; // Laranja
-                return '#9b59b6'; // Roxo padrão para termos novos
+                return '#9b59b6'; // Roxo (para qualquer outro status novo)
             };
 
-            // Para cada status diferente encontrado na planilha, cria um bloco visual novo
+            // Cria um bloco visual para cada status mapeado no banco
             for (let statusName in contagemStatus) {
                 let corBorda = obterCorBorda(statusName);
                 containerStatus.innerHTML += `
@@ -207,7 +217,7 @@
     }
 
     function excluir(row) {
-        if(confirm("Confirmar exclusão?")) {
+        if(confirm("Deseja confirmar a exclusão?")) {
             fetch(URL + "?action=delete&row=" + row).then(() => buscar());
         }
     }
