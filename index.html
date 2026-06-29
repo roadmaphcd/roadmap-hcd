@@ -14,14 +14,18 @@
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background: #008fa1; color: #fff; }
 
-        /* Estilos do Novo Dashboard (Mini Relatório) */
+        /* Estrutura do Painel de Resumos Dinâmico */
         .dashboard { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
         .db-card { 
             background: #fff; padding: 15px; border-radius: 8px; flex: 1; 
-            min-width: 180px; box-shadow: 0 2px 5px #0001; border-left: 5px solid #008fa1; 
+            min-width: 160px; box-shadow: 0 2px 5px #0001; border-left: 5px solid #008fa1; 
         }
         .db-card h3 { margin: 0; font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
         .db-card p { margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: #333; }
+        .db-card span { display: block; font-size: 14px; color: #555; margin-top: 4px; font-weight: 500; }
+        
+        /* Container especial para os blocos de Status Dinâmicos */
+        #status-container { display: flex; gap: 15px; flex-wrap: wrap; width: 100%; }
     </style>
 </head>
 <body>
@@ -39,23 +43,20 @@
         <button style="background: #008fa1;" onclick="abrirFormNovo()">+ NOVO PROJETO</button>
     </div>
     
-    <!-- DASHBOARD DE METRICAS (Exibe o resumo automático do banco de dados) -->
+    <!-- DASHBOARD EVOLUÍDO -->
     <div class="dashboard">
-        <div class="db-card" style="border-left-color: #008fa1;">
-            <h3>Total de Demandas</h3>
-            <p id="total-demandas">0</p>
+        <!-- Card Fixo de Demandas por Pessoa -->
+        <div class="db-card" style="border-left-color: #7f8c8d; min-width: 220px;">
+            <h3>Demandas Assumidas</h3>
+            <span id="count-normando">Normando: 0</span>
+            <span id="count-aline">Aline: 0</span>
+            <span id="count-novelli">Novelli: 0</span>
         </div>
-        <div class="db-card" style="border-left-color: #2e7d32;">
-            <h3>Concluídas</h3>
-            <p id="total-concluidas">0</p>
-        </div>
-        <div class="db-card" style="border-left-color: #f57c00;">
-            <h3>Líder de Demandas</h3>
-            <p id="lider-demandas" style="font-size: 18px; margin-top: 8px;">-</p>
-        </div>
+
+        <!-- Área onde os Status digitados (Andamento, Concluído, Descontinuado, etc) vão aparecer sozinhos -->
+        <div id="status-container"></div>
     </div>
     
-    <!-- Formulário adaptado para receber Edição e Criação -->
     <div id="form-novo" data-row="">
         <select id="resp">
             <option value="Normando">Normando</option>
@@ -85,24 +86,28 @@
             let tbody = document.querySelector("#tb tbody");
             tbody.innerHTML = "";
             
-            // Variáveis para calcular o relatório dinamicamente
-            let totalGeral = data.length - 1; // Desconta a linha do cabeçalho
-            let totalConcluidas = 0;
-            let contagemResponsaveis = {};
+            // Dicionários para contagem dinâmica
+            let deves = { "Normando": 0, "Aline": 0, "Novelli": 0 };
+            let contagemStatus = {}; // Vai guardar dinamicamente {'Concluído': 2, 'Descontinuado': 1, etc}
 
             data.slice(1).forEach((row, index) => {
                 let linhaReal = index + 2; 
 
-                // Lógica de cálculo do relatório (Baseado em TODOS os dados do banco)
-                if (row[2] && (row[2].toLowerCase() === "concluído" || row[2].toLowerCase() === "concluido")) {
-                    totalConcluidas++;
+                // 1. Captura o status digitado, remove espaços extras e padroniza a primeira letra maiúscula
+                let statusDigitado = row[2] ? row[2].trim() : "";
+                if (statusDigitado) {
+                    statusDigitado = statusDigitado.charAt(0).toUpperCase() + statusDigitado.slice(1).toLowerCase();
+                    // Se o status já existir no dicionário, soma 1. Se não existir, começa em 1.
+                    contagemStatus[statusDigitado] = (contagemStatus[statusDigitado] || 0) + 1;
                 }
+                
+                // 2. Conta as demandas fixas por pessoa
                 let responsavel = row[0];
-                if (responsavel) {
-                    contagemResponsaveis[responsavel] = (contagemResponsaveis[responsavel] || 0) + 1;
+                if (responsavel && deves.hasOwnProperty(responsavel)) {
+                    deves[responsavel]++;
                 }
 
-                // Renderização das linhas na tabela baseada no filtro selecionado
+                // 3. Monta a tabela na tela respeitando o filtro selecionado
                 if (filtro === "Todos" || row[0] === filtro) {
                     let rowData = JSON.stringify(row).replace(/"/g, '&quot;');
                     
@@ -121,26 +126,41 @@
                 }
             });
 
-            // Descobrir quem é o líder de demandas no objeto acumulado
-            let liderNome = "-";
-            let liderMax = 0;
-            for (let pessoa in contagemResponsaveis) {
-                if (contagemResponsaveis[pessoa] > liderMax) {
-                    liderMax = contagemResponsaveis[pessoa];
-                    liderNome = `${pessoa} (${liderMax})`;
-                }
-            }
+            // Atualiza a caixinha das pessoas
+            document.getElementById('count-normando').innerText = `Normando: ${deves["Normando"]} demandas`;
+            document.getElementById('count-aline').innerText = `Aline: ${deves["Aline"]} demandas`;
+            document.getElementById('count-novelli').innerText = `Novelli: ${deves["Novelli"]} demandas`;
 
-            // Atualiza os componentes visuais do Mini Relatório na tela
-            document.getElementById('total-demandas').innerText = totalGeral < 0 ? 0 : totalGeral;
-            document.getElementById('total-concluidas').innerText = totalConcluidas;
-            document.getElementById('lider-demandas').innerText = liderNome;
+            // GERADOR DINÂMICO DE CARDS DE STATUS
+            let containerStatus = document.getElementById('status-container');
+            containerStatus.innerHTML = ""; // Limpa os cards antigos
+
+            // Mapeamento de cores baseado no nome do Status para deixar o visual bonito
+            const obterCorBorda = (nome) => {
+                let n = nome.toLowerCase();
+                if (n.includes('conclui') || n.includes('finaliza')) return '#2e7d32'; // Verde
+                if (n.includes('andamento') || n.includes('execu')) return '#008fa1'; // Azul
+                if (n.includes('descontin') || n.includes('cancela') || n.includes('parado')) return '#c0392b'; // Vermelho
+                if (n.includes('aguarda') || n.includes('espera')) return '#f57c00'; // Laranja
+                return '#9b59b6'; // Roxo padrão para termos novos
+            };
+
+            // Para cada status diferente encontrado na planilha, cria um bloco visual novo
+            for (let statusName in contagemStatus) {
+                let corBorda = obterCorBorda(statusName);
+                containerStatus.innerHTML += `
+                    <div class="db-card" style="border-left-color: ${corBorda};">
+                        <h3>${statusName}</h3>
+                        <p>${contagemStatus[statusName]}</p>
+                    </div>
+                `;
+            }
         });
     }
 
     function abrirFormNovo() {
         let form = document.getElementById('form-novo');
-        form.setAttribute('data-row', ''); // Indica que é um novo registro
+        form.setAttribute('data-row', '');
         document.getElementById('proj').value = '';
         document.getElementById('status').value = '';
         document.getElementById('desc').value = '';
@@ -152,7 +172,7 @@
         let dados = JSON.parse(dadosString.replace(/&quot;/g, '"'));
         let form = document.getElementById('form-novo');
         
-        form.setAttribute('data-row', linha); // Guarda a linha que está sendo editada
+        form.setAttribute('data-row', linha);
         document.getElementById('resp').value = dados[0];
         document.getElementById('proj').value = dados[1];
         document.getElementById('status').value = dados[2];
@@ -160,7 +180,7 @@
         document.getElementById('sol').value = dados[4];
         
         form.style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Sobe a página suavemente até o formulário
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function salvar() {
@@ -192,7 +212,6 @@
         }
     }
 
-    // Executa uma busca automática ao carregar a página pela primeira vez
     window.onload = buscar;
 </script>
 </body>
