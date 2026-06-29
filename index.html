@@ -26,10 +26,10 @@
             <option value="Novelli">Novelli</option>
         </select>
         <button style="background: #27ae60;" onclick="buscar()">EXIBIR DADOS</button>
-        <button style="background: #008fa1;" onclick="document.getElementById('form-novo').style.display = 'block'">+ NOVO PROJETO</button>
+        <button style="background: #008fa1;" onclick="abrirFormNovo()">+ NOVO PROJETO</button>
     </div>
     
-    <div id="form-novo">
+    <div id="form-novo" data-row="">
         <select id="resp">
             <option value="Normando">Normando</option>
             <option value="Aline">Aline</option>
@@ -40,10 +40,11 @@
         <input id="desc" placeholder="Descrição">
         <input id="sol" placeholder="Solicitante"> 
         <button style="background: #27ae60;" onclick="salvar()">SALVAR</button>
+        <button style="background: #7f8c8d;" onclick="document.getElementById('form-novo').style.display = 'none'">CANCELAR</button>
     </div>
 
     <table id="tb">
-        <thead><tr><th>Resp</th><th>Projeto</th><th>Status</th><th>Desc</th><th>Sol</th><th>Data</th><th>Ação</th></tr></thead>
+        <thead><tr><th>Resp</th><th>Projeto</th><th>Status</th><th>Desc</th><th>Sol</th><th>Data</th><th>Ações</th></tr></thead>
         <tbody></tbody>
     </table>
 </div>
@@ -56,18 +57,67 @@
         fetch(URL).then(r => r.json()).then(data => {
             let tbody = document.querySelector("#tb tbody");
             tbody.innerHTML = "";
+            
+            // Correção importante: mapeando a linha correta da planilha antes de filtrar
             data.slice(1).forEach((row, index) => {
+                let linhaReal = index + 2; 
                 if (filtro === "Todos" || row[0] === filtro) {
-                    tbody.innerHTML += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td><td>${row[5]}</td>
-                    <td><button style="background: #c0392b;" onclick="excluir(${index + 2})">Excluir</button></td></tr>`;
+                    // Escapando strings para evitar quebras de aspas no HTML do botão editar
+                    let rowData = JSON.stringify(row).replace(/"/g, '&quot;');
+                    
+                    tbody.innerHTML += `<tr>
+                        <td>${row[0]}</td>
+                        <td>${row[1]}</td>
+                        <td>${row[2]}</td>
+                        <td>${row[3]}</td>
+                        <td>${row[4]}</td>
+                        <td>${row[5]}</td>
+                        <td>
+                            <button style="background: #2980b9; margin-right: 5px;" onclick="editar(${linhaReal}, '${rowData}')">Editar</button>
+                            <button style="background: #c0392b;" onclick="excluir(${linhaReal})">Excluir</button>
+                        </td>
+                    </tr>`;
                 }
             });
         });
     }
 
+    function abrirFormNovo() {
+        let form = document.getElementById('form-novo');
+        form.setAttribute('data-row', ''); // Limpa o ID da linha (indica novo projeto)
+        document.getElementById('proj').value = '';
+        document.getElementById('status').value = '';
+        document.getElementById('desc').value = '';
+        document.getElementById('sol').value = '';
+        form.style.display = 'block';
+    }
+
+    function editar(linha, dadosString) {
+        let dados = JSON.parse(dadosString.replace(/&quot;/g, '"'));
+        let form = document.getElementById('form-novo');
+        
+        // Preenche o formulário com os dados existentes da linha
+        form.setAttribute('data-row', linha); 
+        document.getElementById('resp').value = dados[0];
+        document.getElementById('proj').value = dados[1];
+        document.getElementById('status').value = dados[2];
+        document.getElementById('desc').value = dados[3];
+        document.getElementById('sol').value = dados[4];
+        
+        form.style.display = 'block';
+    }
+
     function salvar() {
+        let form = document.getElementById('form-novo');
+        let linhaExistente = form.getAttribute('data-row');
+        
+        // Se houver uma linha guardada no formulário, a ação vira 'edit' (ou o termo que seu Apps Script use)
+        // Caso contrário, continua sendo 'add'
+        let acao = linhaExistente ? 'edit' : 'add';
+
         let params = new URLSearchParams({
-            action: 'add',
+            action: acao,
+            row: linhaExistente, // Envia o número da linha se for edição
             resp: document.getElementById('resp').value,
             proj: document.getElementById('proj').value,
             status: document.getElementById('status').value,
@@ -75,8 +125,10 @@
             sol: document.getElementById('sol').value,
             data: new Date().toLocaleDateString()
         });
+
         fetch(URL + "?" + params).then(() => { 
-            document.getElementById('form-novo').style.display = 'none';
+            form.style.display = 'none';
+            form.setAttribute('data-row', '');
             buscar(); 
         });
     }
