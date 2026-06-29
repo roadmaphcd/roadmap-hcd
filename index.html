@@ -53,22 +53,26 @@
         const f = document.getElementById("filtro").value;
         const btn = document.getElementById("btnExibir");
         btn.style.display = (f !== "Todos") ? "inline-block" : "none";
-        if(f === "Todos") render(false);
     }
 
     function novo() {
         let d = dados();
-        d.push({ resp: "", proj: "", status: "Iniciado", desc: "", sol: "" });
+        const f = document.getElementById("filtro").value;
+        let novoResp = (f !== "Todos") ? f : "";
+        
+        d.push({ resp: novoResp, proj: "", status: "Iniciado", desc: "", sol: "" });
         salvar(d);
         render(true, d.length - 1);
     }
 
     function render(isEdit, index = -1) {
         editandoIndex = isEdit ? index : -1;
-        let f = document.getElementById("filtro").value, tb = document.getElementById("tb");
+        let f = document.getElementById("filtro").value;
+        let tb = document.getElementById("tb");
         tb.innerHTML = "";
+        
         dados().forEach((x, i) => {
-            if (f !== "Todos" && x.resp !== f) return;
+            if (i !== editandoIndex && f !== "Todos" && x.resp !== f) return;
             
             if (i === editandoIndex) {
                 tb.innerHTML += `<tr>
