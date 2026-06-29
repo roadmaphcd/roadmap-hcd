@@ -96,7 +96,6 @@
             let contagemStatus = {}; 
 
             data.forEach((row, rawIndex) => {
-                // Ignora a linha de cabeçalho de texto vinda do banco
                 if (row[0] && (row[0].toLowerCase() === "resp" || row[0].toLowerCase() === "responsável" || row[0].toLowerCase() === "responsavel")) return;
 
                 let linhaReal = rawIndex + 1; 
@@ -114,22 +113,23 @@
                     deves[responsavel]++;
                 }
 
-                // 3. Formata a data ISO para o padrão brasileiro
+                // 3. Mapeamento de Data (Identificamos que ela vem na posição row[5] agora)
                 let dataFormatada = "-";
-                if (row[4]) {
+                let campoData = row[5] || row[4];
+                if (campoData && campoData.toString().includes('-')) {
                     try {
-                        let dataObj = new Date(row[4]);
+                        let dataObj = new Date(campoData);
                         if (!isNaN(dataObj)) {
                             dataFormatada = dataObj.toLocaleDateString('pt-BR', {timeZone: 'UTC'});
                         } else {
-                            dataFormatada = row[4];
+                            dataFormatada = campoData;
                         }
                     } catch(e) {
-                        dataFormatada = row[4];
+                        dataFormatada = campoData;
                     }
                 }
 
-                // 4. Alimenta a tabela exibindo todas as colunas alinhadas, inclusive a Descrição (row[5])
+                // 4. Exibe os dados na ordem correta das colunas
                 if (filtro === "Todos" || row[0] === filtro) {
                     let rowData = JSON.stringify(row).replace(/"/g, '&quot;');
                     
@@ -138,7 +138,7 @@
                         <td>${row[1] || ""}</td>
                         <td>${row[2] || ""}</td>
                         <td>${row[3] || ""}</td>
-                        <td>${row[5] || ""}</td>
+                        <td>${row[4] || ""}</td>
                         <td>${dataFormatada}</td>
                         <td>
                             <button style="background: #2980b9; padding: 6px 12px; font-size: 13px;" onclick="editar(${linhaReal}, '${rowData}')">Editar</button>
@@ -179,7 +179,7 @@
 
     function abrirFormNovo() {
         let form = document.getElementById('form-novo');
-        form.setAttribute('data-row', '');
+        form.setAttribute('data-row', ''); // Limpa o ID da linha para garantir que é uma nova inserção
         document.getElementById('proj').value = '';
         document.getElementById('status').value = '';
         document.getElementById('sol').value = '';
@@ -191,12 +191,12 @@
         let dados = JSON.parse(dadosString.replace(/&quot;/g, '"'));
         let form = document.getElementById('form-novo');
         
-        form.setAttribute('data-row', linha);
+        form.setAttribute('data-row', linha); // Define a linha exata que o banco deve alterar
         document.getElementById('resp').value = dados[0] || "";
         document.getElementById('proj').value = dados[1] || "";
         document.getElementById('status').value = dados[2] || "";
         document.getElementById('sol').value = dados[3] || "";
-        document.getElementById('desc').value = dados[5] || ""; 
+        document.getElementById('desc').value = dados[4] || ""; 
         
         form.style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -205,11 +205,13 @@
     function salvar() {
         let form = document.getElementById('form-novo');
         let linhaExistente = form.getAttribute('data-row');
-        let acao = linhaExistente ? 'edit' : 'add';
+        
+        // Se linhaExistente contiver um valor, muda a action para 'edit', senão usa 'add'
+        let acao = (linhaExistente && linhaExistente !== "") ? 'edit' : 'add';
 
         let params = new URLSearchParams({
             action: acao,
-            row: linhaExistente,
+            row: linhaExistente, // Envia o número da linha se for edição
             resp: document.getElementById('resp').value,
             proj: document.getElementById('proj').value,
             status: document.getElementById('status').value,
@@ -220,7 +222,7 @@
 
         fetch(URL + "?" + params).then(() => { 
             form.style.display = 'none';
-            form.setAttribute('data-row', '');
+            form.setAttribute('data-row', ''); // Reseta o formulário pós-salvamento
             buscar(); 
         });
     }
