@@ -2,82 +2,70 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roadmap HCD</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
         .card { max-width: 1000px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px #0002; }
-        .top-controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; }
-        .add { background: #008fa1; }
-        .exibir { background: #27ae60; }
-        
-        /* Estilo do Modal (Formulário) */
-        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        .modal-content { background: #fff; padding: 20px; border-radius: 8px; width: 300px; }
-        input { width: 100%; margin-bottom: 10px; padding: 8px; box-sizing: border-box; }
-        
+        .top-controls { margin-bottom: 20px; }
+        #form-novo { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; border: 1px solid #ddd; }
+        input { margin: 5px 0; padding: 8px; width: 100%; box-sizing: border-box; }
+        button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background: #008fa1; color: #fff; }
     </style>
 </head>
 <body>
-
 <div class="card">
     <h1>Roadmap HCD</h1>
     <div class="top-controls">
-        <button class="exibir" onclick="buscar()">EXIBIR DADOS</button>
-        <button class="add" onclick="abrirModal()">+ NOVO PROJETO</button>
+        <button style="background: #27ae60;" onclick="buscar()">EXIBIR DADOS</button>
+        <button style="background: #008fa1;" onclick="document.getElementById('form-novo').style.display = 'block'">+ NOVO PROJETO</button>
     </div>
+    
+    <div id="form-novo">
+        <input id="resp" placeholder="Responsável"> <input id="proj" placeholder="Projeto">
+        <input id="status" placeholder="Status"> <input id="desc" placeholder="Descrição">
+        <input id="sol" placeholder="Solicitante"> <button style="background: #27ae60;" onclick="salvar()">SALVAR</button>
+    </div>
+
     <table id="tb">
-        <thead><tr><th>RESPONSÁVEL</th><th>PROJETO</th><th>STATUS</th><th>SOLICITADO POR</th><th>DATA</th></tr></thead>
+        <thead><tr><th>Resp</th><th>Projeto</th><th>Status</th><th>Desc</th><th>Sol</th><th>Data</th><th>Ação</th></tr></thead>
         <tbody></tbody>
     </table>
 </div>
 
-<div id="modal">
-    <div class="modal-content">
-        <h3>Novo Projeto</h3>
-        <input type="text" id="resp" placeholder="Responsável">
-        <input type="text" id="proj" placeholder="Projeto">
-        <input type="text" id="status" placeholder="Status">
-        <input type="text" id="sol" placeholder="Solicitado por">
-        <button class="add" onclick="salvar()">Salvar</button>
-        <button onclick="fecharModal()">Cancelar</button>
-    </div>
-</div>
-
 <script>
-    const URL = "https://script.google.com/macros/s/AKfycbxRPI2J33DpLWpfQq8oSd7ALbfXJq1aKqcfy05QAh2luwKlRe7RI7nOIzh8hmUAzmyU/exec";
-
-    function abrirModal() { document.getElementById('modal').style.display = 'flex'; }
-    function fecharModal() { document.getElementById('modal').style.display = 'none'; }
+    const URL = "COLE_AQUI_A_SUA_NOVA_URL";
 
     function buscar() {
-        fetch(URL).then(res => res.json()).then(data => {
+        fetch(URL).then(r => r.json()).then(data => {
             let tbody = document.querySelector("#tb tbody");
             tbody.innerHTML = "";
-            data.slice(1).forEach(row => {
-                tbody.innerHTML += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td></tr>`;
+            data.slice(1).forEach((row, index) => {
+                tbody.innerHTML += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td><td>${row[5]}</td>
+                <td><button style="background: #c0392b;" onclick="excluir(${index + 2})">Excluir</button></td></tr>`;
             });
         });
     }
 
     function salvar() {
-        let dados = new URLSearchParams({
+        let params = new URLSearchParams({
+            action: 'add',
             resp: document.getElementById('resp').value,
             proj: document.getElementById('proj').value,
             status: document.getElementById('status').value,
+            desc: document.getElementById('desc').value,
             sol: document.getElementById('sol').value,
             data: new Date().toLocaleDateString()
         });
-        
-        fetch(URL + "?" + dados.toString()).then(() => {
-            alert("Salvo!");
-            fecharModal();
-            buscar();
-        });
+        fetch(URL + "?" + params).then(() => { buscar(); document.getElementById('form-novo').style.display = 'none'; });
+    }
+
+    function excluir(row) {
+        if(confirm("Confirmar exclusão?")) {
+            fetch(URL + "?action=delete&row=" + row).then(() => buscar());
+        }
     }
 </script>
 </body>
