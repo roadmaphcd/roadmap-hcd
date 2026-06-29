@@ -94,13 +94,9 @@
             let deves = { "Normando": 0, "Aline": 0, "Novelli": 0 };
             let contagemStatus = {}; 
 
-            // Decidimos a posição real com base no array bruto retornado do back-end
             data.forEach((row, rawIndex) => {
-                // Pula a linha 0 se ela for o cabeçalho de texto do banco (ex: "Responsável", "Projeto")
                 if (rawIndex === 0 && (row[0] === "Resp" || row[0] === "Responsável")) return;
 
-                // A linha real no banco/planilha corresponde exatamente ao índice físico no array + 1 (ou o próprio índice se o script do Google usar base 0)
-                // Geralmente no Google Sheets/Apps Script, a linha do primeiro dado é a linha 2.
                 let linhaReal = rawIndex + 1; 
 
                 // 1. Trata o Status para o Mini Relatório
@@ -116,7 +112,7 @@
                     deves[responsavel]++;
                 }
 
-                // 3. Formata a data ISO longa para o padrão brasileiro
+                // 3. Formata a data ISO para o padrão brasileiro
                 let dataFormatada = "-";
                 if (row[4]) {
                     try {
@@ -131,7 +127,7 @@
                     }
                 }
 
-                // 4. Alimenta a tabela filtrada passando a 'linhaReal' correta e imutável
+                // 4. Alimenta a tabela apenas com a ação de Editar
                 if (filtro === "Todos" || row[0] === filtro) {
                     let rowData = JSON.stringify(row).replace(/"/g, '&quot;');
                     
@@ -142,8 +138,7 @@
                         <td>${row[3] || ""}</td>
                         <td>${dataFormatada}</td>
                         <td>
-                            <button style="background: #2980b9; margin-right: 5px; padding: 6px 10px; font-size: 13px;" onclick="editar(${linhaReal}, '${rowData}')">Editar</button>
-                            <button style="background: #c0392b; padding: 6px 10px; font-size: 13px;" onclick="excluir(${linhaReal})">Excluir</button>
+                            <button style="background: #2980b9; padding: 6px 12px; font-size: 13px;" onclick="editar(${linhaReal}, '${rowData}')">Editar</button>
                         </td>
                     </tr>`;
                 }
@@ -225,15 +220,6 @@
             form.setAttribute('data-row', '');
             buscar(); 
         });
-    }
-
-    function excluir(row) {
-        if(confirm("Deseja confirmar a exclusão?")) {
-            // Enviando o comando exato de exclusão com a linha calculada na origem
-            fetch(URL + "?action=delete&row=" + row).then(() => {
-                setTimeout(buscar, 800); // Aguarda um instante para o banco processar e atualiza a tela
-            });
-        }
     }
 
     window.onload = buscar;
