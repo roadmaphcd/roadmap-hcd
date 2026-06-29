@@ -74,6 +74,7 @@
                 <th>Projeto</th>
                 <th>Status</th>
                 <th>Solicitante</th>
+                <th>Descrição</th>
                 <th>Data</th>
                 <th>Ações</th>
             </tr>
@@ -95,7 +96,7 @@
             let contagemStatus = {}; 
 
             data.forEach((row, rawIndex) => {
-                // CORREÇÃO: Ignora qualquer linha que seja identificada como cabeçalho de texto do banco
+                // Ignora a linha de cabeçalho de texto vinda do banco
                 if (row[0] && (row[0].toLowerCase() === "resp" || row[0].toLowerCase() === "responsável" || row[0].toLowerCase() === "responsavel")) return;
 
                 let linhaReal = rawIndex + 1; 
@@ -128,7 +129,7 @@
                     }
                 }
 
-                // 4. Alimenta a tabela apenas com as linhas de dados reais
+                // 4. Alimenta a tabela exibindo todas as colunas alinhadas, inclusive a Descrição (row[5])
                 if (filtro === "Todos" || row[0] === filtro) {
                     let rowData = JSON.stringify(row).replace(/"/g, '&quot;');
                     
@@ -137,6 +138,7 @@
                         <td>${row[1] || ""}</td>
                         <td>${row[2] || ""}</td>
                         <td>${row[3] || ""}</td>
+                        <td>${row[5] || ""}</td>
                         <td>${dataFormatada}</td>
                         <td>
                             <button style="background: #2980b9; padding: 6px 12px; font-size: 13px;" onclick="editar(${linhaReal}, '${rowData}')">Editar</button>
