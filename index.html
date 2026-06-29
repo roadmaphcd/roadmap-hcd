@@ -3,20 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roadmap HCD Cloud</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Roadmap HCD</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
-        .card { max-width: 1200px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px #0002; }
-        h1 { color: #008fa1; margin-bottom: 20px; }
-        .top-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
+        .card { max-width: 1000px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px #0002; }
+        .top-controls { display: flex; gap: 10px; margin-bottom: 20px; }
         button { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; }
         .add { background: #008fa1; }
         .exibir { background: #27ae60; }
-        .del { background: #c0392b; }
         .table-container { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th, td { border: 1px solid #ddd; padding: 10px; white-space: nowrap; }
         th { background: #008fa1; color: #fff; }
     </style>
 </head>
@@ -24,80 +21,47 @@
 <div class="card">
     <h1>Roadmap HCD</h1>
     <div class="top-controls">
-        <label>Responsável:
-            <select id="filtro">
-                <option value="Todos">Todos</option>
-                <option value="Normando">Normando</option>
-                <option value="Aline">Aline</option>
-                <option value="Novelli">Novelli</option>
-            </select>
-        </label>
-        <button class="exibir" onclick="carregarDados()">EXIBIR</button>
-        <button class="add" onclick="novoProjeto()">+ Projeto</button>
+        <button class="exibir" onclick="buscar()">EXIBIR DADOS</button>
+        <button class="add" onclick="novo()">+ NOVO PROJETO</button>
     </div>
     <div class="table-container">
         <table id="tb">
-            <thead><tr><th>Responsável</th><th>Projeto</th><th>Status</th><th>Descrição</th><th>Solicitante</th><th>Data</th><th>Ações</th></tr></thead>
+            <thead><tr><th>RESPONSÁVEL</th><th>PROJETO</th><th>STATUS</th><th>SOLICITADO POR</th><th>DATA</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
 </div>
 
 <script>
-    // Credenciais integradas
-    const supabase = supabase.createClient(
-        'https://qwsaepwvxxihlqqmlsqa.supabase.co', 
-        'sb_publishable_6kcIfh-2NLViN8WYhxfCgG_GJ1US_i_j3xXj2S7XW4'
-    );
+    const URL = "https://script.google.com/macros/s/AKfycbx0FpRDz-6U1DfTy2U2lYIGGWyhws72MA1Rm1fycJvegxOcibkZcgV_VVLDblVQVq7g/exec";
 
-    async function carregarDados() {
-        let f = document.getElementById("filtro").value;
-        let query = supabase.from('roadmap').select('*');
-        if (f !== "Todos") query = query.eq('resp', f);
-        
-        let { data, error } = await query;
-        if (error) { console.error("Erro ao carregar:", error); return; }
-        
-        let tbody = document.querySelector("#tb tbody");
-        tbody.innerHTML = "";
-        (data || []).forEach(x => {
-            tbody.innerHTML += `<tr>
-                <td>${x.resp}</td><td>${x.proj}</td><td>${x.status}</td><td>${x.desc}</td><td>${x.sol}</td><td>${x.data}</td>
-                <td><button class="del" onclick="excluir(${x.id})">Excluir</button></td>
-            </tr>`;
-        });
+    function buscar() {
+        fetch(URL)
+            .then(res => res.json())
+            .then(data => {
+                let tbody = document.querySelector("#tb tbody");
+                tbody.innerHTML = "";
+                data.forEach(row => {
+                    tbody.innerHTML += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td></tr>`;
+                });
+            });
     }
 
-    async function novoProjeto() {
-        try {
-            const { data, error } = await supabase.from('roadmap').insert([{ 
-                resp: 'Normando', 
-                proj: 'Novo Projeto', 
-                status: 'Iniciado', 
-                data: new Date().toISOString().split('T')[0] 
-            }]);
+    function novo() {
+        let resp = prompt("Responsável:");
+        let proj = prompt("Projeto:");
+        let status = prompt("Status:");
+        let sol = prompt("Solicitado por:");
+        let data = new Date().toLocaleDateString();
 
-            if (error) {
-                console.error("Erro do Supabase:", error);
-                alert("Erro ao salvar no banco: " + error.message);
-            } else {
-                carregarDados();
-            }
-        } catch (err) {
-            console.error("Erro inesperado:", err);
-            alert("Erro inesperado, verifique o console (F12)");
+        if(resp && proj) {
+            let dados = `?resp=${resp}&proj=${proj}&status=${status}&sol=${sol}&data=${data}`;
+            fetch(URL + dados).then(() => {
+                alert("Salvo com sucesso!");
+                buscar();
+            });
         }
     }
-
-    async function excluir(id) {
-        if (confirm("Excluir projeto?")) {
-            await supabase.from('roadmap').delete().eq('id', id);
-            carregarDados();
-        }
-    }
-
-    // Carrega ao iniciar
-    carregarDados();
 </script>
 </body>
 </html>
