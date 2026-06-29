@@ -1,44 +1,99 @@
 <!DOCTYPE html>
-<html lang="pt-br"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Roadmap HCD</title>
-<style>
-body{font-family:Segoe UI,sans-serif;background:#f4f7f6;margin:0;padding:24px}
-.card{max-width:1200px;margin:auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px #0002}
-h1{color:#008fa1}.top{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}
-table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px}th{background:#008fa1;color:#fff}
-button{padding:7px 12px;border:none;border-radius:6px;cursor:pointer}
-.add{background:#008fa1;color:#fff}.save{background:#27ae60;color:#fff}.del{background:#c0392b;color:#fff}
-</style></head><body><div class="card">
-<h1>Roadmap HCD</h1>
-<div class="top">
-<label>Responsável:
-<select id="filtro" onchange="render()"><option>Todos</option><option>Normando</option><option>Aline</option><option>Novelli</option></select></label>
-<button class="add" onclick="novo()">+ Projeto</button>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Roadmap HCD</title>
+    <style>
+        body { font-family: Segoe UI, sans-serif; background: #f4f7f6; margin: 0; padding: 24px; }
+        .card { max-width: 1200px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px #0002; }
+        h1 { color: #008fa1; }
+        .top { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 25px; align-items: center; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 10px; }
+        th { background: #008fa1; color: #fff; }
+        button { padding: 7px 12px; border: none; border-radius: 6px; cursor: pointer; }
+        .add { background: #008fa1; color: #fff; }
+        .save { background: #27ae60; color: #fff; }
+        .del { background: #c0392b; color: #fff; }
+        .edit-btn { background: #f39c12; color: #fff; }
+        td input, td select { width: 100%; box-sizing: border-box; padding: 5px; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Roadmap HCD</h1>
+    <div class="top">
+        <label>Responsável:
+            <select id="filtro" onchange="verificarSelecao()">
+                <option value="Todos">Todos</option>
+                <option value="Normando">Normando</option>
+                <option value="Aline">Aline</option>
+                <option value="Novelli">Novelli</option>
+            </select>
+        </label>
+        <button id="btnExibir" class="save" style="display:none" onclick="render(false)">EXIBIR</button>
+        <button class="add" onclick="novo()">+ Projeto</button>
+    </div>
+    <table>
+        <thead><tr><th>Responsável</th><th>Projeto</th><th>Status</th><th>Descrição</th><th>Solicitante</th><th>Ações</th></tr></thead>
+        <tbody id="tb"></tbody>
+    </table>
 </div>
-<table><thead><tr><th>Responsável</th><th>Projeto</th><th>Status</th><th>Descrição</th><th>Solicitante</th><th>Ações</th></tr></thead><tbody id="tb"></tbody></table>
-</div>
+
 <script>
-const sts=["Iniciado","Em andamento","Concluído","Pendência"];
-const resps=["Normando","Aline","Novelli"];
-function dados(){return JSON.parse(localStorage.getItem("roadmap")||"[]")}
-function salvar(d){localStorage.setItem("roadmap",JSON.stringify(d))}
-function novo(){let d=dados();d.push({resp:"Normando",proj:"",status:"Iniciado",desc:"",sol:""});salvar(d);render();}
-function render(){
-let f=document.getElementById("filtro").value,tb=document.getElementById("tb");tb.innerHTML="";
-dados().forEach((x,i)=>{
- if(f!="Todos"&&x.resp!=f)return;
- tb.innerHTML+=`<tr>
-<td><select onchange="upd(${i},'resp',this.value)">${resps.map(r=>`<option ${r==x.resp?'selected':''}>${r}</option>`).join('')}</select></td>
-<td><input value="${x.proj}" oninput="upd(${i},'proj',this.value)"></td>
-<td><select onchange="upd(${i},'status',this.value)">${sts.map(s=>`<option ${s==x.status?'selected':''}>${s}</option>`).join('')}</select></td>
-<td><input value="${x.desc}" oninput="upd(${i},'desc',this.value)"></td>
-<td><input value="${x.sol}" oninput="upd(${i},'sol',this.value)"></td>
-<td><button class="save" onclick="alert('Alterações já salvas.')">Salvar</button> <button class="del" onclick="exc(${i})">Excluir</button></td>
-</tr>`;
-})
-}
-function upd(i,c,v){let d=dados();d[i][c]=v;salvar(d)}
-function exc(i){if(confirm("Excluir projeto?")){let d=dados();d.splice(i,1);salvar(d);render();}}
-if(dados().length==0){salvar([{resp:"Normando",proj:"Portal HCD",status:"Em andamento",desc:"Nova intranet",sol:"Diretoria"},{resp:"Aline",proj:"SharePoint",status:"Iniciado",desc:"Estrutura",sol:"TI"}]);}
-render();
-</script></body></html>
+    const sts=["Iniciado","Em andamento","Concluído","Pendência"];
+    const resps=["Normando","Aline","Novelli"];
+    let editandoIndex = -1; // -1 significa que ninguém está em modo edição
+
+    function dados(){ return JSON.parse(localStorage.getItem("roadmap")||"[]"); }
+    function salvar(d){ localStorage.setItem("roadmap",JSON.stringify(d)); }
+
+    function verificarSelecao() {
+        const f = document.getElementById("filtro").value;
+        const btn = document.getElementById("btnExibir");
+        btn.style.display = (f !== "Todos") ? "inline-block" : "none";
+        if(f === "Todos") render(false);
+    }
+
+    function novo(){
+        let d = dados();
+        d.push({resp:"Normando", proj:"Novo", status:"Iniciado", desc:"", sol:""});
+        salvar(d);
+        render(false);
+    }
+
+    function render(isEdit, index = -1){
+        editandoIndex = index;
+        let f = document.getElementById("filtro").value, tb = document.getElementById("tb");
+        tb.innerHTML = "";
+        dados().forEach((x, i) => {
+            if(f !== "Todos" && x.resp !== f) return;
+            
+            if(i === editandoIndex) {
+                // Modo Edição
+                tb.innerHTML += `<tr>
+                    <td><select onchange="upd(${i},'resp',this.value)">${resps.map(r=>`<option ${r==x.resp?'selected':''}>${r}</option>`).join('')}</select></td>
+                    <td><input value="${x.proj}" oninput="upd(${i},'proj',this.value)"></td>
+                    <td><select onchange="upd(${i},'status',this.value)">${sts.map(s=>`<option ${s==x.status?'selected':''}>${s}</option>`).join('')}</select></td>
+                    <td><input value="${x.desc}" oninput="upd(${i},'desc',this.value)"></td>
+                    <td><input value="${x.sol}" oninput="upd(${i},'sol',this.value)"></td>
+                    <td><button class="save" onclick="render(false)">OK</button></td>
+                </tr>`;
+            } else {
+                // Modo Visualização (Texto Normal)
+                tb.innerHTML += `<tr>
+                    <td>${x.resp}</td><td>${x.proj}</td><td>${x.status}</td><td>${x.desc}</td><td>${x.sol}</td>
+                    <td><button class="edit-btn" onclick="render(true, ${i})">Editar</button> <button class="del" onclick="exc(${i})">Excluir</button></td>
+                </tr>`;
+            }
+        });
+    }
+
+    function upd(i,c,v){ let d = dados(); d[i][c] = v; salvar(d); }
+    function exc(i){ if(confirm("Excluir projeto?")){ let d = dados(); d.splice(i,1); salvar(d); render(false); } }
+
+    render(false);
+</script>
+</body>
+</html>
