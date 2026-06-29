@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Roadmap HCD</title>
+    <style>
+        :root { --hcd-azul: #008fa1; --hcd-fundo: #e0f2f4; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--hcd-fundo); padding: 40px; color: #333; }
+        .card { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h1 { color: var(--hcd-azul); border-bottom: 2px solid var(--hcd-azul); padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background: var(--hcd-azul); color: white; padding: 12px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #ddd; }
+        input { border: 1px solid #ccc; padding: 8px; width: 90%; border-radius: 5px; }
+        .btn { padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; color: white; font-weight: bold; }
+        .add { background: var(--hcd-azul); }
+        .save { background: #27ae60; }
+        .excel { background: #2c3e50; }
+        .del { background: #c0392b; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Roadmap HCD Desenvolvimento</h1>
+    <table id="tabela">
+        <thead>
+            <tr><th>Responsável</th><th>Projeto</th><th>Status</th><th>Solicitante</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="corpo"></tbody>
+    </table>
+    <button class="btn add" onclick="adicionar()">+ Projeto</button>
+    <button class="btn save" onclick="salvar()">Salvar Alterações</button>
+    <button class="btn excel" onclick="baixarExcel()">Baixar Excel (CSV)</button>
+</div>
+
+<script>
+    function renderizar() {
+        const dados = JSON.parse(localStorage.getItem('hcd_data')) || [];
+        document.getElementById("corpo").innerHTML = dados.map((item, index) => `
+            <tr>
+                <td><input value="${item.resp}"></td>
+                <td><input value="${item.proj}"></td>
+                <td><input value="${item.status}"></td>
+                <td><input value="${item.sol}"></td>
+                <td><button class="btn del" onclick="excluir(${index})">X</button></td>
+            </tr>`).join('');
+    }
+
+    function salvar() {
+        const rows = document.querySelectorAll("#corpo tr");
+        const dados = Array.from(rows).map(tr => ({
+            resp: tr.cells[0].querySelector('input').value,
+            proj: tr.cells[1].querySelector('input').value,
+            status: tr.cells[2].querySelector('input').value,
+            sol: tr.cells[3].querySelector('input').value
+        }));
+        localStorage.setItem('hcd_data', JSON.stringify(dados));
+        alert("Dados salvos com sucesso!");
+    }
+
+    function adicionar() {
+        const dados = JSON.parse(localStorage.getItem('hcd_data')) || [];
+        dados.push({resp: "", proj: "", status: "", sol: ""});
+        localStorage.setItem('hcd_data', JSON.stringify(dados));
+        renderizar();
+    }
+
+    function excluir(index) {
+        let dados = JSON.parse(localStorage.getItem('hcd_data'));
+        dados.splice(index, 1);
+        localStorage.setItem('hcd_data', JSON.stringify(dados));
+        renderizar();
+    }
+
+    function baixarExcel() {
+        const dados = JSON.parse(localStorage.getItem('hcd_data'));
+        let csv = "Responsavel,Projeto,Status,Solicitante\n";
+        dados.forEach(i => csv += `${i.resp},${i.proj},${i.status},${i.sol}\n`);
+        const blob = new Blob([csv], {type: 'text/csv'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = "roadmap_hcd.csv";
+        a.click();
+    }
+
+    window.onload = renderizar;
+</script>
+</body>
+</html>
