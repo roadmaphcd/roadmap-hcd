@@ -1,80 +1,44 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Roadmap HCD</title>
-    <style>
-        :root { --hcd-azul: #008fa1; --hcd-fundo: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--hcd-fundo); padding: 40px; }
-        .card { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1 { color: var(--hcd-azul); margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: var(--hcd-azul); color: white; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #eee; }
-        input { border: 1px solid #ddd; padding: 5px; width: 90%; border-radius: 4px; }
-        .btn { padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; color: white; font-weight: bold; margin-top: 10px; }
-        .save { background: #27ae60; }
-        .edit { background: #f39c12; }
-    </style>
-</head>
-<body>
-
-<div class="card">
-    <h1>Roadmap HCD</h1>
-    <table id="tabela">
-        <thead>
-            <tr><th>Responsável</th><th>Projeto</th><th>Status</th><th>Solicitante</th><th>Ações</th></tr>
-        </thead>
-        <tbody id="corpo"></tbody>
-    </table>
-    <button class="btn" style="background: var(--hcd-azul);" onclick="adicionar()">+ Projeto</button>
-    <button class="btn save" onclick="salvar()">Salvar e Visualizar</button>
+<html lang="pt-br"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Roadmap HCD</title>
+<style>
+body{font-family:Segoe UI,sans-serif;background:#f4f7f6;margin:0;padding:24px}
+.card{max-width:1200px;margin:auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px #0002}
+h1{color:#008fa1}.top{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}
+table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px}th{background:#008fa1;color:#fff}
+button{padding:7px 12px;border:none;border-radius:6px;cursor:pointer}
+.add{background:#008fa1;color:#fff}.save{background:#27ae60;color:#fff}.del{background:#c0392b;color:#fff}
+</style></head><body><div class="card">
+<h1>Roadmap HCD</h1>
+<div class="top">
+<label>Responsável:
+<select id="filtro" onchange="render()"><option>Todos</option><option>Normando</option><option>Aline</option><option>Novelli</option></select></label>
+<button class="add" onclick="novo()">+ Projeto</button>
 </div>
-
+<table><thead><tr><th>Responsável</th><th>Projeto</th><th>Status</th><th>Descrição</th><th>Solicitante</th><th>Ações</th></tr></thead><tbody id="tb"></tbody></table>
+</div>
 <script>
-    // Recupera dados ou inicializa vazio
-    function obterDados() {
-        return JSON.parse(localStorage.getItem('hcd_data')) || [];
-    }
-
-    function renderizar(modoEdicao = false) {
-        const dados = obterDados();
-        const corpo = document.getElementById("corpo");
-        corpo.innerHTML = "";
-        
-        dados.forEach((item, index) => {
-            corpo.innerHTML += `<tr>
-                <td>${modoEdicao ? `<input class="inp-resp" value="${item.resp}">` : item.resp}</td>
-                <td>${modoEdicao ? `<input class="inp-proj" value="${item.proj}">` : item.proj}</td>
-                <td>${modoEdicao ? `<input class="inp-status" value="${item.status}">` : item.status}</td>
-                <td>${modoEdicao ? `<input class="inp-sol" value="${item.sol}">` : item.sol}</td>
-                <td><button class="btn edit" onclick="renderizar(true)">Editar</button></td>
-            </tr>`;
-        });
-    }
-
-    function salvar() {
-        const linhas = document.querySelectorAll("#corpo tr");
-        const novosDados = Array.from(linhas).map(tr => ({
-            resp: tr.querySelector('.inp-resp') ? tr.querySelector('.inp-resp').value : tr.cells[0].innerText,
-            proj: tr.querySelector('.inp-proj') ? tr.querySelector('.inp-proj').value : tr.cells[1].innerText,
-            status: tr.querySelector('.inp-status') ? tr.querySelector('.inp-status').value : tr.cells[2].innerText,
-            sol: tr.querySelector('.inp-sol') ? tr.querySelector('.inp-sol').value : tr.cells[3].innerText
-        }));
-        
-        localStorage.setItem('hcd_data', JSON.stringify(novosDados));
-        alert("Dados salvos!");
-        renderizar(false); 
-    }
-
-    function adicionar() {
-        const dados = obterDados();
-        dados.push({resp: "Normando", proj: "Novo Projeto", status: "Planejamento", sol: "..."});
-        localStorage.setItem('hcd_data', JSON.stringify(dados));
-        renderizar(true);
-    }
-
-    window.onload = () => renderizar(false);
-</script>
-</body>
-</html>
+const sts=["Iniciado","Em andamento","Concluído","Pendência"];
+const resps=["Normando","Aline","Novelli"];
+function dados(){return JSON.parse(localStorage.getItem("roadmap")||"[]")}
+function salvar(d){localStorage.setItem("roadmap",JSON.stringify(d))}
+function novo(){let d=dados();d.push({resp:"Normando",proj:"",status:"Iniciado",desc:"",sol:""});salvar(d);render();}
+function render(){
+let f=document.getElementById("filtro").value,tb=document.getElementById("tb");tb.innerHTML="";
+dados().forEach((x,i)=>{
+ if(f!="Todos"&&x.resp!=f)return;
+ tb.innerHTML+=`<tr>
+<td><select onchange="upd(${i},'resp',this.value)">${resps.map(r=>`<option ${r==x.resp?'selected':''}>${r}</option>`).join('')}</select></td>
+<td><input value="${x.proj}" oninput="upd(${i},'proj',this.value)"></td>
+<td><select onchange="upd(${i},'status',this.value)">${sts.map(s=>`<option ${s==x.status?'selected':''}>${s}</option>`).join('')}</select></td>
+<td><input value="${x.desc}" oninput="upd(${i},'desc',this.value)"></td>
+<td><input value="${x.sol}" oninput="upd(${i},'sol',this.value)"></td>
+<td><button class="save" onclick="alert('Alterações já salvas.')">Salvar</button> <button class="del" onclick="exc(${i})">Excluir</button></td>
+</tr>`;
+})
+}
+function upd(i,c,v){let d=dados();d[i][c]=v;salvar(d)}
+function exc(i){if(confirm("Excluir projeto?")){let d=dados();d.splice(i,1);salvar(d);render();}}
+if(dados().length==0){salvar([{resp:"Normando",proj:"Portal HCD",status:"Em andamento",desc:"Nova intranet",sol:"Diretoria"},{resp:"Aline",proj:"SharePoint",status:"Iniciado",desc:"Estrutura",sol:"TI"}]);}
+render();
+</script></body></html>
