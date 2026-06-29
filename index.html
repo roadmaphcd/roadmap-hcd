@@ -7,13 +7,13 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
         .card { max-width: 1000px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px #0002; }
-        .top-controls { display: flex; gap: 10px; margin-bottom: 20px; }
-        button { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; }
+        .top-controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; }
         .add { background: #008fa1; }
         .exibir { background: #27ae60; }
         .table-container { width: 100%; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th, td { border: 1px solid #ddd; padding: 10px; white-space: nowrap; }
+        th, td { border: 1px solid #ddd; padding: 12px; white-space: nowrap; text-align: left; }
         th { background: #008fa1; color: #fff; }
     </style>
 </head>
@@ -27,21 +27,23 @@
     <div class="table-container">
         <table id="tb">
             <thead><tr><th>RESPONSÁVEL</th><th>PROJETO</th><th>STATUS</th><th>SOLICITADO POR</th><th>DATA</th></tr></thead>
-            <tbody></tbody>
+            <tbody><tr><td colspan="5">Clique em EXIBIR DADOS para carregar...</td></tr></tbody>
         </table>
     </div>
 </div>
 
 <script>
-    const URL = "https://script.google.com/macros/s/AKfycbx0FpRDz-6U1DfTy2U2lYIGGWyhws72MA1Rm1fycJvegxOcibkZcgV_VVLDblVQVq7g/exec";
+    const URL = "https://script.google.com/macros/s/AKfycbxRPI2J33DpLWpfQq8oSd7ALbfXJq1aKqcfy05QAh2luwKlRe7RI7nOIzh8hmUAzmyU/exec";
 
     function buscar() {
+        document.querySelector("#tb tbody").innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
         fetch(URL)
             .then(res => res.json())
             .then(data => {
                 let tbody = document.querySelector("#tb tbody");
                 tbody.innerHTML = "";
-                data.forEach(row => {
+                // Pula a primeira linha (cabeçalho da planilha)
+                data.slice(1).forEach(row => {
                     tbody.innerHTML += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td></tr>`;
                 });
             });
@@ -55,8 +57,9 @@
         let data = new Date().toLocaleDateString();
 
         if(resp && proj) {
-            let dados = `?resp=${resp}&proj=${proj}&status=${status}&sol=${sol}&data=${data}`;
-            fetch(URL + dados).then(() => {
+            let params = new URLSearchParams({resp, proj, status, sol, data});
+            fetch(URL + "?" + params.toString())
+            .then(() => {
                 alert("Salvo com sucesso!");
                 buscar();
             });
