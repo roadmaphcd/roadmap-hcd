@@ -2,38 +2,49 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roadmap HCD Cloud</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
-        .card { max-width: 1200px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px #0002; }
-        h1 { color: #008fa1; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 10px; margin: 0; }
+        .card { max-width: 1200px; margin: auto; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px #0002; }
+        h1 { color: #008fa1; font-size: 1.5rem; }
+        
+        /* Container para a tabela permitir rolagem horizontal no celular */
+        .table-container { width: 100%; overflow-x: auto; margin-top: 15px; }
+        
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 0.9rem; }
         th { background: #008fa1; color: #fff; }
-        button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; }
+        
+        select, button { padding: 8px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; }
+        .top-controls { display: flex; gap: 5px; flex-wrap: wrap; }
         .del { background: #c0392b; color: #fff; }
     </style>
 </head>
 <body>
 <div class="card">
     <h1>Roadmap HCD</h1>
-    <select id="filtro">
-        <option value="Todos">Todos</option>
-        <option value="Normando">Normando</option>
-        <option value="Aline">Aline</option>
-        <option value="Novelli">Novelli</option>
-    </select>
-    <button onclick="carregarDados()">EXIBIR</button>
-    <button onclick="novoProjeto()">+ Projeto</button>
-    <table id="tb">
-        <thead><tr><th>Responsável</th><th>Projeto</th><th>Status</th><th>Descrição</th><th>Solicitante</th><th>Data</th><th>Ações</th></tr></thead>
-        <tbody></tbody>
-    </table>
+    <div class="top-controls">
+        <select id="filtro">
+            <option value="Todos">Todos</option>
+            <option value="Normando">Normando</option>
+            <option value="Aline">Aline</option>
+            <option value="Novelli">Novelli</option>
+        </select>
+        <button onclick="carregarDados()">EXIBIR</button>
+        <button onclick="novoProjeto()">+ Projeto</button>
+    </div>
+    
+    <div class="table-container">
+        <table id="tb">
+            <thead><tr><th>Responsável</th><th>Projeto</th><th>Status</th><th>Descrição</th><th>Solicitante</th><th>Data</th><th>Ações</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
 </div>
 
 <script>
-    // Configuração com sua chave pública encontrada em image_5f749b.png
     const supabase = supabase.createClient(
         'https://qwsaepwvxxihlqqmlsqa.supabase.co', 
         'sb_publishable_6kcIfh-2NLViN8WYhxfCgG_GJ1US_i_j3xXj2S7XW4'
