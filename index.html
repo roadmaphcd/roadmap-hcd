@@ -42,12 +42,12 @@
 </div>
 
 <script>
-    const sts=["Iniciado","Em andamento","Concluído","Pendência"];
-    const resps=["Normando","Aline","Novelli"];
-    let editandoIndex = -1; // -1 significa que ninguém está em modo edição
+    const sts = ["Iniciado", "Em andamento", "Concluído", "Pendência"];
+    const resps = ["Normando", "Aline", "Novelli"];
+    let editandoIndex = -1;
 
-    function dados(){ return JSON.parse(localStorage.getItem("roadmap")||"[]"); }
-    function salvar(d){ localStorage.setItem("roadmap",JSON.stringify(d)); }
+    function dados() { return JSON.parse(localStorage.getItem("roadmap") || "[]"); }
+    function salvar(d) { localStorage.setItem("roadmap", JSON.stringify(d)); }
 
     function verificarSelecao() {
         const f = document.getElementById("filtro").value;
@@ -56,24 +56,26 @@
         if(f === "Todos") render(false);
     }
 
-    function novo(){
+    function novo() {
         let d = dados();
-        d.push({resp:"Normando", proj:"Novo", status:"Iniciado", desc:"", sol:""});
+        d.push({ resp: "", proj: "", status: "Iniciado", desc: "", sol: "" });
         salvar(d);
-        render(false);
+        render(true, d.length - 1);
     }
 
-    function render(isEdit, index = -1){
-        editandoIndex = index;
+    function render(isEdit, index = -1) {
+        editandoIndex = isEdit ? index : -1;
         let f = document.getElementById("filtro").value, tb = document.getElementById("tb");
         tb.innerHTML = "";
         dados().forEach((x, i) => {
-            if(f !== "Todos" && x.resp !== f) return;
+            if (f !== "Todos" && x.resp !== f) return;
             
-            if(i === editandoIndex) {
-                // Modo Edição
+            if (i === editandoIndex) {
                 tb.innerHTML += `<tr>
-                    <td><select onchange="upd(${i},'resp',this.value)">${resps.map(r=>`<option ${r==x.resp?'selected':''}>${r}</option>`).join('')}</select></td>
+                    <td><select onchange="upd(${i},'resp',this.value)">
+                        <option value="">Selecione</option>
+                        ${resps.map(r => `<option ${r==x.resp?'selected':''}>${r}</option>`).join('')}
+                    </select></td>
                     <td><input value="${x.proj}" oninput="upd(${i},'proj',this.value)"></td>
                     <td><select onchange="upd(${i},'status',this.value)">${sts.map(s=>`<option ${s==x.status?'selected':''}>${s}</option>`).join('')}</select></td>
                     <td><input value="${x.desc}" oninput="upd(${i},'desc',this.value)"></td>
@@ -81,7 +83,6 @@
                     <td><button class="save" onclick="render(false)">OK</button></td>
                 </tr>`;
             } else {
-                // Modo Visualização (Texto Normal)
                 tb.innerHTML += `<tr>
                     <td>${x.resp}</td><td>${x.proj}</td><td>${x.status}</td><td>${x.desc}</td><td>${x.sol}</td>
                     <td><button class="edit-btn" onclick="render(true, ${i})">Editar</button> <button class="del" onclick="exc(${i})">Excluir</button></td>
@@ -90,8 +91,8 @@
         });
     }
 
-    function upd(i,c,v){ let d = dados(); d[i][c] = v; salvar(d); }
-    function exc(i){ if(confirm("Excluir projeto?")){ let d = dados(); d.splice(i,1); salvar(d); render(false); } }
+    function upd(i, c, v) { let d = dados(); d[i][c] = v; salvar(d); }
+    function exc(i) { if (confirm("Excluir projeto?")) { let d = dados(); d.splice(i, 1); salvar(d); render(false); } }
 
     render(false);
 </script>
