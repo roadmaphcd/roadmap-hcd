@@ -32,7 +32,7 @@
                 <option value="Novelli">Novelli</option>
             </select>
         </label>
-        <button id="btnExibir" class="save" style="display:none" onclick="render(false)">EXIBIR</button>
+        <button id="btnExibir" class="save" onclick="render(false)">EXIBIR</button>
         <button class="add" onclick="novo()">+ Projeto</button>
     </div>
     <table>
@@ -49,10 +49,9 @@
     function dados() { return JSON.parse(localStorage.getItem("roadmap") || "[]"); }
     function salvar(d) { localStorage.setItem("roadmap", JSON.stringify(d)); }
 
+    // Botão Exibir agora fica sempre visível
     function verificarSelecao() {
-        const f = document.getElementById("filtro").value;
-        const btn = document.getElementById("btnExibir");
-        btn.style.display = (f !== "Todos") ? "inline-block" : "none";
+        // Apenas lógica de controle se necessário no futuro
     }
 
     function novo() {
@@ -72,6 +71,7 @@
         tb.innerHTML = "";
         
         dados().forEach((x, i) => {
+            // Se estiver editando, mostra a linha. Se não, filtra conforme o select.
             if (i !== editandoIndex && f !== "Todos" && x.resp !== f) return;
             
             if (i === editandoIndex) {
