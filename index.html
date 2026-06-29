@@ -24,12 +24,14 @@
 <div class="card">
     <h1>Roadmap HCD</h1>
     <div class="top-controls">
-        <select id="filtro">
-            <option value="Todos">Todos</option>
-            <option value="Normando">Normando</option>
-            <option value="Aline">Aline</option>
-            <option value="Novelli">Novelli</option>
-        </select>
+        <label>Responsável:
+            <select id="filtro">
+                <option value="Todos">Todos</option>
+                <option value="Normando">Normando</option>
+                <option value="Aline">Aline</option>
+                <option value="Novelli">Novelli</option>
+            </select>
+        </label>
         <button class="exibir" onclick="carregarDados()">EXIBIR</button>
         <button class="add" onclick="novoProjeto()">+ Projeto</button>
     </div>
@@ -42,7 +44,7 @@
 </div>
 
 <script>
-    // Conexão configurada com sua chave pública
+    // Credenciais integradas
     const supabase = supabase.createClient(
         'https://qwsaepwvxxihlqqmlsqa.supabase.co', 
         'sb_publishable_6kcIfh-2NLViN8WYhxfCgG_GJ1US_i_j3xXj2S7XW4'
@@ -67,14 +69,24 @@
     }
 
     async function novoProjeto() {
-        let f = document.getElementById("filtro").value;
-        let respPadrao = (f !== "Todos") ? f : "Normando";
-        
-        await supabase.from('roadmap').insert([{ 
-            resp: respPadrao, proj: 'Novo Projeto', status: 'Iniciado', 
-            data: new Date().toISOString().split('T')[0] 
-        }]);
-        carregarDados();
+        try {
+            const { data, error } = await supabase.from('roadmap').insert([{ 
+                resp: 'Normando', 
+                proj: 'Novo Projeto', 
+                status: 'Iniciado', 
+                data: new Date().toISOString().split('T')[0] 
+            }]);
+
+            if (error) {
+                console.error("Erro do Supabase:", error);
+                alert("Erro ao salvar no banco: " + error.message);
+            } else {
+                carregarDados();
+            }
+        } catch (err) {
+            console.error("Erro inesperado:", err);
+            alert("Erro inesperado, verifique o console (F12)");
+        }
     }
 
     async function excluir(id) {
@@ -84,6 +96,7 @@
         }
     }
 
+    // Carrega ao iniciar
     carregarDados();
 </script>
 </body>
