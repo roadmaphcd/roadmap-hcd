@@ -9,15 +9,11 @@
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
         .card { max-width: 1200px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px #0002; }
         h1 { color: #008fa1; margin-bottom: 20px; }
-        
         .top-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
-        
-        /* Aparência dos botões restaurada */
         button { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; }
         .add { background: #008fa1; }
         .exibir { background: #27ae60; }
         .del { background: #c0392b; }
-        
         .table-container { width: 100%; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
@@ -28,18 +24,15 @@
 <div class="card">
     <h1>Roadmap HCD</h1>
     <div class="top-controls">
-        <label>Responsável:
-            <select id="filtro">
-                <option value="Todos">Todos</option>
-                <option value="Normando">Normando</option>
-                <option value="Aline">Aline</option>
-                <option value="Novelli">Novelli</option>
-            </select>
-        </label>
+        <select id="filtro">
+            <option value="Todos">Todos</option>
+            <option value="Normando">Normando</option>
+            <option value="Aline">Aline</option>
+            <option value="Novelli">Novelli</option>
+        </select>
         <button class="exibir" onclick="carregarDados()">EXIBIR</button>
         <button class="add" onclick="novoProjeto()">+ Projeto</button>
     </div>
-    
     <div class="table-container">
         <table id="tb">
             <thead><tr><th>Responsável</th><th>Projeto</th><th>Status</th><th>Descrição</th><th>Solicitante</th><th>Data</th><th>Ações</th></tr></thead>
@@ -49,6 +42,7 @@
 </div>
 
 <script>
+    // Conexão configurada com sua chave pública
     const supabase = supabase.createClient(
         'https://qwsaepwvxxihlqqmlsqa.supabase.co', 
         'sb_publishable_6kcIfh-2NLViN8WYhxfCgG_GJ1US_i_j3xXj2S7XW4'
@@ -60,7 +54,7 @@
         if (f !== "Todos") query = query.eq('resp', f);
         
         let { data, error } = await query;
-        if (error) { console.error(error); return; }
+        if (error) { console.error("Erro ao carregar:", error); return; }
         
         let tbody = document.querySelector("#tb tbody");
         tbody.innerHTML = "";
@@ -77,9 +71,7 @@
         let respPadrao = (f !== "Todos") ? f : "Normando";
         
         await supabase.from('roadmap').insert([{ 
-            resp: respPadrao, 
-            proj: 'Novo Projeto', 
-            status: 'Iniciado', 
+            resp: respPadrao, proj: 'Novo Projeto', status: 'Iniciado', 
             data: new Date().toISOString().split('T')[0] 
         }]);
         carregarDados();
@@ -92,7 +84,6 @@
         }
     }
 
-    // Carrega ao abrir
     carregarDados();
 </script>
 </body>
