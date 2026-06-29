@@ -43,7 +43,6 @@
         <button style="background: #008fa1;" onclick="abrirFormNovo()">+ NOVO PROJETO</button>
     </div>
     
-    <!-- PAINEL DE MÉTRICAS DINÂMICO -->
     <div class="dashboard">
         <div class="db-card" style="border-left-color: #7f8c8d; min-width: 220px;">
             <h3>Demandas Assumidas</h3>
@@ -54,7 +53,6 @@
         <div id="status-container"></div>
     </div>
     
-    <!-- Formulário de cadastro/edição -->
     <div id="form-novo" data-row="">
         <select id="resp">
             <option value="Normando">Normando</option>
@@ -69,7 +67,6 @@
         <button style="background: #7f8c8d;" onclick="document.getElementById('form-novo').style.display = 'none'">CANCELAR</button>
     </div>
 
-    <!-- Cabeçalho reorganizado conforme a ordem real dos seus dados -->
     <table id="tb">
         <thead>
             <tr>
@@ -97,8 +94,14 @@
             let deves = { "Normando": 0, "Aline": 0, "Novelli": 0 };
             let contagemStatus = {}; 
 
-            data.slice(1).forEach((row, index) => {
-                let linhaReal = index + 2; 
+            // Decidimos a posição real com base no array bruto retornado do back-end
+            data.forEach((row, rawIndex) => {
+                // Pula a linha 0 se ela for o cabeçalho de texto do banco (ex: "Responsável", "Projeto")
+                if (rawIndex === 0 && (row[0] === "Resp" || row[0] === "Responsável")) return;
+
+                // A linha real no banco/planilha corresponde exatamente ao índice físico no array + 1 (ou o próprio índice se o script do Google usar base 0)
+                // Geralmente no Google Sheets/Apps Script, a linha do primeiro dado é a linha 2.
+                let linhaReal = rawIndex + 1; 
 
                 // 1. Trata o Status para o Mini Relatório
                 let statusDigitado = row[2] ? row[2].trim() : "";
@@ -113,7 +116,7 @@
                     deves[responsavel]++;
                 }
 
-                // 3. Formata a data ISO longa para o padrão brasileiro (DD/MM/AAAA)
+                // 3. Formata a data ISO longa para o padrão brasileiro
                 let dataFormatada = "-";
                 if (row[4]) {
                     try {
@@ -121,14 +124,14 @@
                         if (!isNaN(dataObj)) {
                             dataFormatada = dataObj.toLocaleDateString('pt-BR', {timeZone: 'UTC'});
                         } else {
-                            dataFormatada = row[4]; // Se não for ISO, exibe o que estiver escrito
+                            dataFormatada = row[4];
                         }
                     } catch(e) {
                         dataFormatada = row[4];
                     }
                 }
 
-                // 4. Alimenta a tabela usando o mapeamento correto dos dados da imagem
+                // 4. Alimenta a tabela filtrada passando a 'linhaReal' correta e imutável
                 if (filtro === "Todos" || row[0] === filtro) {
                     let rowData = JSON.stringify(row).replace(/"/g, '&quot;');
                     
@@ -195,7 +198,7 @@
         document.getElementById('proj').value = dados[1] || "";
         document.getElementById('status').value = dados[2] || "";
         document.getElementById('sol').value = dados[3] || "";
-        document.getElementById('desc').value = dados[5] || ""; // Caso use descrição em outro índice
+        document.getElementById('desc').value = dados[5] || ""; 
         
         form.style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -214,7 +217,7 @@
             status: document.getElementById('status').value,
             sol: document.getElementById('sol').value,
             desc: document.getElementById('desc').value,
-            data: new Date().toISOString() // Envia no formato que o banco já está acostumado
+            data: new Date().toISOString()
         });
 
         fetch(URL + "?" + params).then(() => { 
@@ -226,7 +229,10 @@
 
     function excluir(row) {
         if(confirm("Deseja confirmar a exclusão?")) {
-            fetch(URL + "?action=delete&row=" + row).then(() => buscar());
+            // Enviando o comando exato de exclusão com a linha calculada na origem
+            fetch(URL + "?action=delete&row=" + row).then(() => {
+                setTimeout(buscar, 800); // Aguarda um instante para o banco processar e atualiza a tela
+            });
         }
     }
 
