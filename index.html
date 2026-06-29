@@ -1,26 +1,55 @@
-<div class="top-controls">
-    <select id="filtro" onchange="buscar()">
-        <option value="Todos">Todos</option>
-        <option value="Normando">Normando</option>
-        <option value="Aline">Aline</option>
-        <option value="Novelli">Novelli</option>
-    </select>
-    <button style="background: #27ae60;" onclick="buscar()">EXIBIR DADOS</button>
-    <button style="background: #008fa1;" onclick="document.getElementById('form-novo').style.display = 'block'">+ NOVO PROJETO</button>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Roadmap HCD</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
+        .card { max-width: 1000px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px #0002; }
+        .top-controls { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+        #form-novo { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; border: 1px solid #ddd; }
+        input { margin: 5px; padding: 8px; width: 160px; }
+        button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #008fa1; color: #fff; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Roadmap HCD</h1>
+    <div class="top-controls">
+        <select id="filtro" onchange="buscar()">
+            <option value="Todos">Todos</option>
+            <option value="Normando">Normando</option>
+            <option value="Aline">Aline</option>
+            <option value="Novelli">Novelli</option>
+        </select>
+        <button style="background: #27ae60;" onclick="buscar()">EXIBIR DADOS</button>
+        <button style="background: #008fa1;" onclick="document.getElementById('form-novo').style.display = 'block'">+ NOVO PROJETO</button>
+    </div>
+    
+    <div id="form-novo">
+        <input id="resp" placeholder="Responsável"> <input id="proj" placeholder="Projeto">
+        <input id="status" placeholder="Status"> <input id="desc" placeholder="Descrição">
+        <input id="sol" placeholder="Solicitante"> <button style="background: #27ae60;" onclick="salvar()">SALVAR</button>
+    </div>
+
+    <table id="tb">
+        <thead><tr><th>Resp</th><th>Projeto</th><th>Status</th><th>Desc</th><th>Sol</th><th>Data</th><th>Ação</th></tr></thead>
+        <tbody></tbody>
+    </table>
 </div>
 
 <script>
-    const URL = "COLE_AQUI_A_SUA_URL"; 
+    const URL = "SUA_URL_AQUI";
 
     function buscar() {
         let filtro = document.getElementById('filtro').value;
         fetch(URL).then(r => r.json()).then(data => {
             let tbody = document.querySelector("#tb tbody");
             tbody.innerHTML = "";
-            
-            // Pula o cabeçalho e filtra as linhas
             data.slice(1).forEach((row, index) => {
-                // row[0] é o Responsável. Se "Todos" ou igual ao filtro, exibe.
                 if (filtro === "Todos" || row[0] === filtro) {
                     tbody.innerHTML += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td><td>${row[5]}</td>
                     <td><button style="background: #c0392b;" onclick="excluir(${index + 2})">Excluir</button></td></tr>`;
@@ -28,6 +57,28 @@
             });
         });
     }
-    
-    // ... manter o restante das funções (salvar e excluir) como estão
+
+    function salvar() {
+        let params = new URLSearchParams({
+            action: 'add',
+            resp: document.getElementById('resp').value,
+            proj: document.getElementById('proj').value,
+            status: document.getElementById('status').value,
+            desc: document.getElementById('desc').value,
+            sol: document.getElementById('sol').value,
+            data: new Date().toLocaleDateString()
+        });
+        fetch(URL + "?" + params).then(() => { 
+            document.getElementById('form-novo').style.display = 'none';
+            buscar(); 
+        });
+    }
+
+    function excluir(row) {
+        if(confirm("Confirmar exclusão?")) {
+            fetch(URL + "?action=delete&row=" + row).then(() => buscar());
+        }
+    }
 </script>
+</body>
+</html>
