@@ -45,15 +45,12 @@
     
     <!-- PAINEL DE MÉTRICAS DINÂMICO -->
     <div class="dashboard">
-        <!-- Card Fixo de Demandas por Pessoa -->
         <div class="db-card" style="border-left-color: #7f8c8d; min-width: 220px;">
             <h3>Demandas Assumidas</h3>
             <span id="count-normando">Normando: 0 demandas</span>
             <span id="count-aline">Aline: 0 demandas</span>
             <span id="count-novelli">Novelli: 0 demandas</span>
         </div>
-
-        <!-- Área onde os Status (Em andamento, Concluído, Descontinuado, etc.) aparecem sozinhos -->
         <div id="status-container"></div>
     </div>
     
@@ -66,19 +63,19 @@
         </select>
         <input id="proj" placeholder="Projeto">
         <input id="status" placeholder="Status">
-        <input id="desc" placeholder="Descrição">
         <input id="sol" placeholder="Solicitante"> 
+        <input id="desc" placeholder="Descrição">
         <button style="background: #27ae60;" onclick="salvar()">SALVAR</button>
         <button style="background: #7f8c8d;" onclick="document.getElementById('form-novo').style.display = 'none'">CANCELAR</button>
     </div>
 
+    <!-- Cabeçalho reorganizado conforme a ordem real dos seus dados -->
     <table id="tb">
         <thead>
             <tr>
                 <th>Responsável</th>
                 <th>Projeto</th>
                 <th>Status</th>
-                <th>Descrição</th>
                 <th>Solicitante</th>
                 <th>Data</th>
                 <th>Ações</th>
@@ -97,14 +94,13 @@
             let tbody = document.querySelector("#tb tbody");
             tbody.innerHTML = "";
             
-            // Dicionários para contagem dinâmica
             let deves = { "Normando": 0, "Aline": 0, "Novelli": 0 };
             let contagemStatus = {}; 
 
             data.slice(1).forEach((row, index) => {
                 let linhaReal = index + 2; 
 
-                // 1. Captura o status digitado, padronizando a primeira letra em maiúscula
+                // 1. Trata o Status para o Mini Relatório
                 let statusDigitado = row[2] ? row[2].trim() : "";
                 if (statusDigitado) {
                     statusDigitado = statusDigitado.charAt(0).toUpperCase() + statusDigitado.slice(1).toLowerCase();
@@ -117,17 +113,31 @@
                     deves[responsavel]++;
                 }
 
-                // 3. Alimenta a tabela respeitando o filtro selecionado
+                // 3. Formata a data ISO longa para o padrão brasileiro (DD/MM/AAAA)
+                let dataFormatada = "-";
+                if (row[4]) {
+                    try {
+                        let dataObj = new Date(row[4]);
+                        if (!isNaN(dataObj)) {
+                            dataFormatada = dataObj.toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+                        } else {
+                            dataFormatada = row[4]; // Se não for ISO, exibe o que estiver escrito
+                        }
+                    } catch(e) {
+                        dataFormatada = row[4];
+                    }
+                }
+
+                // 4. Alimenta a tabela usando o mapeamento correto dos dados da imagem
                 if (filtro === "Todos" || row[0] === filtro) {
                     let rowData = JSON.stringify(row).replace(/"/g, '&quot;');
                     
                     tbody.innerHTML += `<tr>
-                        <td>${row[0]}</td>
-                        <td>${row[1]}</td>
-                        <td>${row[2]}</td>
-                        <td>${row[3]}</td>
-                        <td>${row[4]}</td>
-                        <td>${row[5]}</td>
+                        <td>${row[0] || ""}</td>
+                        <td>${row[1] || ""}</td>
+                        <td>${row[2] || ""}</td>
+                        <td>${row[3] || ""}</td>
+                        <td>${dataFormatada}</td>
                         <td>
                             <button style="background: #2980b9; margin-right: 5px; padding: 6px 10px; font-size: 13px;" onclick="editar(${linhaReal}, '${rowData}')">Editar</button>
                             <button style="background: #c0392b; padding: 6px 10px; font-size: 13px;" onclick="excluir(${linhaReal})">Excluir</button>
@@ -136,26 +146,24 @@
                 }
             });
 
-            // Atualiza as demandas individuais por pessoa
+            // Atualiza as demandas individuais
             document.getElementById('count-normando').innerText = `Normando: ${deves["Normando"]} demandas`;
             document.getElementById('count-aline').innerText = `Aline: ${deves["Aline"]} demandas`;
             document.getElementById('count-novelli').innerText = `Novelli: ${deves["Novelli"]} demandas`;
 
-            // GERADOR DINÂMICO DE CARDS DE STATUS
+            // Gerador dinâmico de cards de Status
             let containerStatus = document.getElementById('status-container');
             containerStatus.innerHTML = ""; 
 
-            // Define cores inteligentes baseadas no texto do Status
             const obterCorBorda = (nome) => {
                 let n = nome.toLowerCase();
-                if (n.includes('conclui') || n.includes('finaliza')) return '#2e7d32'; // Verde
-                if (n.includes('andamento') || n.includes('execu')) return '#008fa1'; // Azul
-                if (n.includes('descontin') || n.includes('cancela') || n.includes('parado')) return '#c0392b'; // Vermelho
-                if (n.includes('aguarda') || n.includes('espera')) return '#f57c00'; // Laranja
-                return '#9b59b6'; // Roxo (para qualquer outro status novo)
+                if (n.includes('conclui') || n.includes('finaliza')) return '#2e7d32';
+                if (n.includes('andamento') || n.includes('execu')) return '#008fa1';
+                if (n.includes('descontin') || n.includes('cancela') || n.includes('parado')) return '#c0392b';
+                if (n.includes('aguarda') || n.includes('espera')) return '#f57c00';
+                return '#9b59b6';
             };
 
-            // Cria um bloco visual para cada status mapeado no banco
             for (let statusName in contagemStatus) {
                 let corBorda = obterCorBorda(statusName);
                 containerStatus.innerHTML += `
@@ -173,8 +181,8 @@
         form.setAttribute('data-row', '');
         document.getElementById('proj').value = '';
         document.getElementById('status').value = '';
-        document.getElementById('desc').value = '';
         document.getElementById('sol').value = '';
+        document.getElementById('desc').value = '';
         form.style.display = 'block';
     }
 
@@ -183,11 +191,11 @@
         let form = document.getElementById('form-novo');
         
         form.setAttribute('data-row', linha);
-        document.getElementById('resp').value = dados[0];
-        document.getElementById('proj').value = dados[1];
-        document.getElementById('status').value = dados[2];
-        document.getElementById('desc').value = dados[3];
-        document.getElementById('sol').value = dados[4];
+        document.getElementById('resp').value = dados[0] || "";
+        document.getElementById('proj').value = dados[1] || "";
+        document.getElementById('status').value = dados[2] || "";
+        document.getElementById('sol').value = dados[3] || "";
+        document.getElementById('desc').value = dados[5] || ""; // Caso use descrição em outro índice
         
         form.style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -204,9 +212,9 @@
             resp: document.getElementById('resp').value,
             proj: document.getElementById('proj').value,
             status: document.getElementById('status').value,
-            desc: document.getElementById('desc').value,
             sol: document.getElementById('sol').value,
-            data: new Date().toLocaleDateString()
+            desc: document.getElementById('desc').value,
+            data: new Date().toISOString() // Envia no formato que o banco já está acostumado
         });
 
         fetch(URL + "?" + params).then(() => { 
