@@ -24,7 +24,7 @@
         .db-card p { margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: #333; }
         .db-card span { display: block; font-size: 14px; color: #555; margin-top: 4px; font-weight: 500; }
         
-        /* Container especial para os blocos de Status Dinâmicos */
+        /* Container para os blocos de Status Dinâmicos */
         #status-container { display: flex; gap: 15px; flex-wrap: wrap; width: 100%; }
     </style>
 </head>
@@ -53,7 +53,7 @@
         <div id="status-container"></div>
     </div>
     
-    <div id="form-novo" data-row="">
+    <div id="form-novo" data-id="">
         <select id="resp">
             <option value="Normando">Normando</option>
             <option value="Aline">Aline</option>
@@ -96,63 +96,69 @@
             let contagemStatus = {}; 
 
             data.forEach((row, rawIndex) => {
-                if (row[0] && (row[0].toLowerCase() === "resp" || row[0].toLowerCase() === "responsável" || row[0].toLowerCase() === "responsavel")) return;
+                // Filtra a linha de títulos de texto caso ela venha do banco
+                if (row[0] && (row[0].toLowerCase() === "resp" || row[0].toLowerCase() === "responsável" || row[0].toLowerCase() === "id")) return;
 
-                let linhaReal = rawIndex + 1; 
+                // Mapeamento correto com base nas colunas do Supabase:
+                let idUnico = row[0];       // Coluna 'id' (eu ia)
+                let responsavel = row[2];  // Coluna 'resp'
+                let projeto = row[3];      // Coluna 'proj'
+                let status = row[4];       // Coluna 'status'
+                let descricao = row[5];    // Coluna 'descrição'
+                let solicitante = row[6];  // Coluna 'Sol'
+                let dataBanco = row[1];    // Coluna 'criado_em' ou 'dados' (row[7])
 
-                // 1. Trata o Status para o Mini Relatório
-                let statusDigitado = row[2] ? row[2].trim() : "";
+                // 1. Contagem para o Mini Relatório de Status
+                let statusDigitado = status ? status.trim() : "";
                 if (statusDigitado) {
                     statusDigitado = statusDigitado.charAt(0).toUpperCase() + statusDigitado.slice(1).toLowerCase();
                     contagemStatus[statusDigitado] = (contagemStatus[statusDigitado] || 0) + 1;
                 }
                 
-                // 2. Conta as demandas por pessoa
-                let responsavel = row[0];
+                // 2. Contagem de demandas por pessoa
                 if (responsavel && deves.hasOwnProperty(responsavel)) {
                     deves[responsavel]++;
                 }
 
-                // 3. Mapeamento de Data (Identificamos que ela vem na posição row[5] agora)
+                // 3. Formatação amigável da Data brasileira
                 let dataFormatada = "-";
-                let campoData = row[5] || row[4];
-                if (campoData && campoData.toString().includes('-')) {
+                if (dataBanco) {
                     try {
-                        let dataObj = new Date(campoData);
+                        let dataObj = new Date(dataBanco);
                         if (!isNaN(dataObj)) {
                             dataFormatada = dataObj.toLocaleDateString('pt-BR', {timeZone: 'UTC'});
                         } else {
-                            dataFormatada = campoData;
+                            dataFormatada = dataBanco;
                         }
                     } catch(e) {
-                        dataFormatada = campoData;
+                        dataFormatada = dataBanco;
                     }
                 }
 
-                // 4. Exibe os dados na ordem correta das colunas
-                if (filtro === "Todos" || row[0] === filtro) {
+                // 4. Monta as linhas visuais da tabela obedecendo o filtro por pessoa
+                if (filtro === "Todos" || responsavel === filtro) {
                     let rowData = JSON.stringify(row).replace(/"/g, '&quot;');
                     
                     tbody.innerHTML += `<tr>
-                        <td>${row[0] || ""}</td>
-                        <td>${row[1] || ""}</td>
-                        <td>${row[2] || ""}</td>
-                        <td>${row[3] || ""}</td>
-                        <td>${row[4] || ""}</td>
+                        <td>${responsavel || ""}</td>
+                        <td>${projeto || ""}</td>
+                        <td>${status || ""}</td>
+                        <td>${solicitante || ""}</td>
+                        <td>${descricao || ""}</td>
                         <td>${dataFormatada}</td>
                         <td>
-                            <button style="background: #2980b9; padding: 6px 12px; font-size: 13px;" onclick="editar(${linhaReal}, '${rowData}')">Editar</button>
+                            <button style="background: #2980b9; padding: 6px 12px; font-size: 13px;" onclick="editar('${idUnico}', '${rowData}')">Editar</button>
                         </td>
                     </tr>`;
                 }
             });
 
-            // Atualiza as demandas individuais
+            // Atualiza as caixas de demandas individuais
             document.getElementById('count-normando').innerText = `Normando: ${deves["Normando"]} demandas`;
             document.getElementById('count-aline').innerText = `Aline: ${deves["Aline"]} demandas`;
             document.getElementById('count-novelli').innerText = `Novelli: ${deves["Novelli"]} demandas`;
 
-            // Gerador dinâmico de cards de Status
+            // Gerador automático de blocos de Status
             let containerStatus = document.getElementById('status-container');
             containerStatus.innerHTML = ""; 
 
@@ -179,7 +185,7 @@
 
     function abrirFormNovo() {
         let form = document.getElementById('form-novo');
-        form.setAttribute('data-row', ''); // Limpa o ID da linha para garantir que é uma nova inserção
+        form.setAttribute('data-id', ''); // Limpa o ID para indicar inserção de novo projeto
         document.getElementById('proj').value = '';
         document.getElementById('status').value = '';
         document.getElementById('sol').value = '';
@@ -187,16 +193,16 @@
         form.style.display = 'block';
     }
 
-    function editar(linha, dadosString) {
+    function editar(id, dadosString) {
         let dados = JSON.parse(dadosString.replace(/&quot;/g, '"'));
         let form = document.getElementById('form-novo');
         
-        form.setAttribute('data-row', linha); // Define a linha exata que o banco deve alterar
-        document.getElementById('resp').value = dados[0] || "";
-        document.getElementById('proj').value = dados[1] || "";
-        document.getElementById('status').value = dados[2] || "";
-        document.getElementById('sol').value = dados[3] || "";
-        document.getElementById('desc').value = dados[4] || ""; 
+        form.setAttribute('data-id', id); // Armazena o ID real e único do banco de dados
+        document.getElementById('resp').value = dados[2] || "";
+        document.getElementById('proj').value = dados[3] || "";
+        document.getElementById('status').value = dados[4] || "";
+        document.getElementById('desc').value = dados[5] || ""; 
+        document.getElementById('sol').value = dados[6] || "";
         
         form.style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -204,14 +210,14 @@
 
     function salvar() {
         let form = document.getElementById('form-novo');
-        let linhaExistente = form.getAttribute('data-row');
+        let idExistente = form.getAttribute('data-id');
         
-        // Se linhaExistente contiver um valor, muda a action para 'edit', senão usa 'add'
-        let acao = (linhaExistente && linhaExistente !== "") ? 'edit' : 'add';
+        // Se houver ID guardado, define como edição ('edit'), senão criação ('add')
+        let acao = (idExistente && idExistente !== "") ? 'edit' : 'add';
 
         let params = new URLSearchParams({
             action: acao,
-            row: linhaExistente, // Envia o número da linha se for edição
+            row: idExistente, // Passa o ID único para a API do Apps Script localizar o registro correto
             resp: document.getElementById('resp').value,
             proj: document.getElementById('proj').value,
             status: document.getElementById('status').value,
@@ -222,7 +228,7 @@
 
         fetch(URL + "?" + params).then(() => { 
             form.style.display = 'none';
-            form.setAttribute('data-row', ''); // Reseta o formulário pós-salvamento
+            form.setAttribute('data-id', ''); 
             buscar(); 
         });
     }
