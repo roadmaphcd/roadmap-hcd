@@ -13,11 +13,21 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background: #008fa1; color: #fff; }
+
+        /* Estilos do Novo Dashboard (Mini Relatório) */
+        .dashboard { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .db-card { 
+            background: #fff; padding: 15px; border-radius: 8px; flex: 1; 
+            min-width: 180px; box-shadow: 0 2px 5px #0001; border-left: 5px solid #008fa1; 
+        }
+        .db-card h3 { margin: 0; font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+        .db-card p { margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: #333; }
     </style>
 </head>
 <body>
 <div class="card">
     <h1>Roadmap HCD</h1>
+    
     <div class="top-controls">
         <select id="filtro" onchange="buscar()">
             <option value="Todos">Todos</option>
@@ -29,6 +39,23 @@
         <button style="background: #008fa1;" onclick="abrirFormNovo()">+ NOVO PROJETO</button>
     </div>
     
+    <!-- DASHBOARD DE METRICAS (Exibe o resumo automático do banco de dados) -->
+    <div class="dashboard">
+        <div class="db-card" style="border-left-color: #008fa1;">
+            <h3>Total de Demandas</h3>
+            <p id="total-demandas">0</p>
+        </div>
+        <div class="db-card" style="border-left-color: #2e7d32;">
+            <h3>Concluídas</h3>
+            <p id="total-concluidas">0</p>
+        </div>
+        <div class="db-card" style="border-left-color: #f57c00;">
+            <h3>Líder de Demandas</h3>
+            <p id="lider-demandas" style="font-size: 18px; margin-top: 8px;">-</p>
+        </div>
+    </div>
+    
+    <!-- Formulário adaptado para receber Edição e Criação -->
     <div id="form-novo" data-row="">
         <select id="resp">
             <option value="Normando">Normando</option>
@@ -58,11 +85,25 @@
             let tbody = document.querySelector("#tb tbody");
             tbody.innerHTML = "";
             
-            // Correção importante: mapeando a linha correta da planilha antes de filtrar
+            // Variáveis para calcular o relatório dinamicamente
+            let totalGeral = data.length - 1; // Desconta a linha do cabeçalho
+            let totalConcluidas = 0;
+            let contagemResponsaveis = {};
+
             data.slice(1).forEach((row, index) => {
                 let linhaReal = index + 2; 
+
+                // Lógica de cálculo do relatório (Baseado em TODOS os dados do banco)
+                if (row[2] && (row[2].toLowerCase() === "concluído" || row[2].toLowerCase() === "concluido")) {
+                    totalConcluidas++;
+                }
+                let responsavel = row[0];
+                if (responsavel) {
+                    contagemResponsaveis[responsavel] = (contagemResponsaveis[responsavel] || 0) + 1;
+                }
+
+                // Renderização das linhas na tabela baseada no filtro selecionado
                 if (filtro === "Todos" || row[0] === filtro) {
-                    // Escapando strings para evitar quebras de aspas no HTML do botão editar
                     let rowData = JSON.stringify(row).replace(/"/g, '&quot;');
                     
                     tbody.innerHTML += `<tr>
@@ -73,18 +114,33 @@
                         <td>${row[4]}</td>
                         <td>${row[5]}</td>
                         <td>
-                            <button style="background: #2980b9; margin-right: 5px;" onclick="editar(${linhaReal}, '${rowData}')">Editar</button>
-                            <button style="background: #c0392b;" onclick="excluir(${linhaReal})">Excluir</button>
+                            <button style="background: #2980b9; margin-right: 5px; padding: 6px 10px; font-size: 13px;" onclick="editar(${linhaReal}, '${rowData}')">Editar</button>
+                            <button style="background: #c0392b; padding: 6px 10px; font-size: 13px;" onclick="excluir(${linhaReal})">Excluir</button>
                         </td>
                     </tr>`;
                 }
             });
+
+            // Descobrir quem é o líder de demandas no objeto acumulado
+            let liderNome = "-";
+            let liderMax = 0;
+            for (let pessoa in contagemResponsaveis) {
+                if (contagemResponsaveis[pessoa] > liderMax) {
+                    liderMax = contagemResponsaveis[pessoa];
+                    liderNome = `${pessoa} (${liderMax})`;
+                }
+            }
+
+            // Atualiza os componentes visuais do Mini Relatório na tela
+            document.getElementById('total-demandas').innerText = totalGeral < 0 ? 0 : totalGeral;
+            document.getElementById('total-concluidas').innerText = totalConcluidas;
+            document.getElementById('lider-demandas').innerText = liderNome;
         });
     }
 
     function abrirFormNovo() {
         let form = document.getElementById('form-novo');
-        form.setAttribute('data-row', ''); // Limpa o ID da linha (indica novo projeto)
+        form.setAttribute('data-row', ''); // Indica que é um novo registro
         document.getElementById('proj').value = '';
         document.getElementById('status').value = '';
         document.getElementById('desc').value = '';
@@ -96,8 +152,7 @@
         let dados = JSON.parse(dadosString.replace(/&quot;/g, '"'));
         let form = document.getElementById('form-novo');
         
-        // Preenche o formulário com os dados existentes da linha
-        form.setAttribute('data-row', linha); 
+        form.setAttribute('data-row', linha); // Guarda a linha que está sendo editada
         document.getElementById('resp').value = dados[0];
         document.getElementById('proj').value = dados[1];
         document.getElementById('status').value = dados[2];
@@ -105,19 +160,17 @@
         document.getElementById('sol').value = dados[4];
         
         form.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Sobe a página suavemente até o formulário
     }
 
     function salvar() {
         let form = document.getElementById('form-novo');
         let linhaExistente = form.getAttribute('data-row');
-        
-        // Se houver uma linha guardada no formulário, a ação vira 'edit' (ou o termo que seu Apps Script use)
-        // Caso contrário, continua sendo 'add'
         let acao = linhaExistente ? 'edit' : 'add';
 
         let params = new URLSearchParams({
             action: acao,
-            row: linhaExistente, // Envia o número da linha se for edição
+            row: linhaExistente,
             resp: document.getElementById('resp').value,
             proj: document.getElementById('proj').value,
             status: document.getElementById('status').value,
@@ -138,6 +191,9 @@
             fetch(URL + "?action=delete&row=" + row).then(() => buscar());
         }
     }
+
+    // Executa uma busca automática ao carregar a página pela primeira vez
+    window.onload = buscar;
 </script>
 </body>
 </html>
